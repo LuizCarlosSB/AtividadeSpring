@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Pessoas</title>
+    <link id="theme-stylesheet" rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <main class="main-content">
+
+        <h1>Cadastrar Nova Pessoa</h1>
+        <form id="form-cadastro" style="width: 50%; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+                <label>Nome: </label>
+                <input type="text" id="nome" name="nome" placeholder="Nome Completo" style="width: 100%;" required/>
+            </div>
+
+            <div>
+                <label>Idade: </label>
+                <input type="number" id="idade" name="idade" style="width: 100%;" required/>
+            </div>
+
+            <button type="submit" class="botao">Salvar</button>
+        </form>
+
+        <hr style="width: 50%; margin-top: 2rem; margin-bottom: 2rem;"/>
+
+        <h1>Lista de Pessoas</h1>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Idade</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-pessoas">
+                <tr th:if="${#lists.isEmpty(lista)}">
+                    <td colspan="4">Nenhuma pessoa cadastrada.</td>
+                </tr>
+                <tr th:each="p: ${lista}">
+                    <td th:text="${p.id}"></td>
+                    <td th:text="${p.nome}"></td>
+                    <td th:text="${p.idade}"></td>
+                    <td>
+                        <button class="botao-excluir botao" th:data-id="${p.id}" style="background-color: #dc3545;">Excluir</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </main>
+
+    <footer>
+        <p>2025 Meu App</p>
+    </footer>
+
+    <script>
+        // --- LÓGICA PARA CADASTRAR PESSOA ---
+        
+        // 1. Pega o formulário de cadastro pelo ID
+        const formCadastro = document.getElementById('form-cadastro');
+
+        // 2. Adiciona um "ouvinte" para o evento de 'submit' (envio) do formulário
+        formCadastro.addEventListener('submit', function(event) {
+            // 3. Previne o comportamento padrão do navegador (que é recarregar a página)
+            event.preventDefault();
+
+            // 4. Pega os valores dos campos de nome e idade
+            const nome = document.getElementById('nome').value;
+            const idade = document.getElementById('idade').value;
+
+            // 5. Usa a API 'fetch' do JavaScript para enviar os dados para a sua API REST
+            fetch('/api/pessoas', {
+                method: 'POST', // Método HTTP para criar
+                headers: {
+                    'Content-Type': 'application/json', // Informa que estamos enviando dados em formato JSON
+                },
+                body: JSON.stringify({ nome: nome, idade: idade }), // Converte os dados para JSON
+            })
+            .then(response => {
+                if (response.ok) {
+                    // 6. Se a resposta do servidor for OK, simplesmente recarrega a página para mostrar a lista atualizada.
+                    //    É uma forma simples de ver o resultado sem um redirecionamento completo.
+                    location.reload();
+                } else {
+                    alert('Erro ao cadastrar pessoa!');
+                }
+            });
+        });
+
+
+        // --- LÓGICA PARA EXCLUIR PESSOA ---
+
+        // 1. Pega o corpo da tabela
+        const tabelaPessoas = document.getElementById('tabela-pessoas');
+
+        // 2. Adiciona um "ouvinte" de clique na tabela inteira (event delegation)
+        tabelaPessoas.addEventListener('click', function(event) {
+            // 3. Verifica se o que foi clicado foi um botão com a classe 'botao-excluir'
+            if (event.target.classList.contains('botao-excluir')) {
+                
+                // Pega o ID da pessoa que está armazenado no atributo 'data-id' do botão
+                const pessoaId = event.target.getAttribute('data-id');
+
+                // Confirmação para evitar exclusões acidentais
+                if (confirm('Tem certeza que deseja excluir esta pessoa?')) {
+                    // 4. Usa a API 'fetch' para enviar a requisição de exclusão para a API REST
+                    fetch(`/api/pessoas/${pessoaId}`, {
+                        method: 'DELETE', // Método HTTP para deletar
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            // 5. Se a exclusão for bem-sucedida, recarrega a página para atualizar a lista.
+                            location.reload();
+                        } else {
+                            alert('Erro ao excluir pessoa!');
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+    
+</body>
+</html>
